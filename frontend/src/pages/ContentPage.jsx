@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Code, FileText, Loader, AlertCircle } from 'lucide
 import apiClient from '../api/client'
 import CodeBlock from '../components/CodeBlock'
 import PaywallModal from '../components/PaywallModal'
+import { useAuth } from '../context/AuthContext'
 
 // 간단한 마크다운 렌더러 (## ### 지원)
 function SimpleMarkdown({ text }) {
@@ -56,6 +57,7 @@ function TabButton({ active, onClick, icon: Icon, label }) {
 export default function ContentPage() {
   const { sectionId } = useParams()
   const navigate = useNavigate()
+  const { refreshUsage } = useAuth()
   const [section, setSection] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -72,6 +74,7 @@ export default function ContentPage() {
     try {
       const res = await apiClient.get(`/content/${sectionId}`)
       setSection(res.data)
+      refreshUsage()
       // 열람 기록 저장
       const viewed = JSON.parse(localStorage.getItem('viewed_sections') || '[]')
       if (!viewed.includes(sectionId)) {
