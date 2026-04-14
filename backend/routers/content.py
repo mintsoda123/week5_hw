@@ -423,3 +423,12 @@ def get_usage_status(current_user: models.User = Depends(get_current_user)):
         "remaining": remaining if not current_user.is_premium else 999,
         "can_access": current_user.is_premium or current_user.usage_count < FREE_USAGE_LIMIT
     }
+
+
+@router.post("/usage/reset")
+def reset_usage(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """사용량 초기화 (테스트용)"""
+    db.query(models.UsageLog).filter(models.UsageLog.user_id == current_user.id).delete()
+    current_user.usage_count = 0
+    db.commit()
+    return {"message": "사용량이 초기화되었습니다."}
