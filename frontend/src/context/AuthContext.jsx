@@ -41,8 +41,13 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const login = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/google/login`
+  const login = async () => {
+    try {
+      const res = await apiClient.get('/auth/google/login')
+      window.location.href = res.data.url
+    } catch {
+      window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/google/login`
+    }
   }
 
   const loginWithToken = (token) => {
