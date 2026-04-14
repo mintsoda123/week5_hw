@@ -9,6 +9,9 @@ const SECTION_EMOJIS = {
   data_augmentation: '🖼️',
   transfer_learning: '🧠',
   mnist_cnn: '✍️',
+  early_stopping: '⏹️',
+  hyperparameter_tuning: '🔧',
+  model_evaluation: '📊',
 }
 
 const SECTION_COLORS = {
@@ -17,6 +20,9 @@ const SECTION_COLORS = {
   data_augmentation: 'green',
   transfer_learning: 'orange',
   mnist_cnn: 'pink',
+  early_stopping: 'blue',
+  hyperparameter_tuning: 'purple',
+  model_evaluation: 'green',
 }
 
 const COLOR_CLASSES = {
