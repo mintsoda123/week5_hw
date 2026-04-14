@@ -1,0 +1,33 @@
+# 환경 변수 (절대 커밋하지 말 것!)
+.env
+backend/.env
+frontend/.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+backend/venv/
+backend/.venv/
+backend/app.db
+*.db
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+}
+
+/* Code block styling */
+pre {
+  @apply rounded-lg overflow-x-auto;
+}
+
+/* Prose styling for markdown content */
+.prose h2 {
+  @apply text-xl font-bold text-gray-800 mt-6 mb-3;
+}
+
+.prose h3 {
+  @apply text-lg font-semibold text-gray-700 mt-4 mb-2;
+}
+
+.prose p {
+  @apply text-gray-600 leading-relaxed mb-3;
+}
+
+.prose ul {
+  @apply list-disc list-inside text-gray-600 mb-3 space-y-1;
+}
+
+.prose table {
+  @apply w-full border-collapse border border-gray-200 mb-4;
+}
+
+.prose th {
+  @apply bg-gray-100 border border-gray-200 px-4 py-2 text-left text-sm font-semibold;
+}
+
+.prose td {
+  @apply border border-gray-200 px-4 py-2 text-sm;
+}
