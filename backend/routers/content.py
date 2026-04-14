@@ -358,6 +358,237 @@ predictions = model.predict(x_test[:5])
 for i in range(5):
     print(f"실제: {y_test[i]}, 예측: {np.argmax(predictions[i])}")""",
         "result_description": "CNN 모델은 약 10 에폭 학습 후 MNIST 테스트 데이터에서 99% 이상의 정확도를 달성합니다."
+    },
+    {
+        "id": "early_stopping",
+        "title": "⏹️ 6. Early Stopping (조기 종료)",
+        "description": "과적합을 막는 가장 간단하고 효과적인 방법",
+        "content": """## Early Stopping이란?
+
+검증 손실(Validation Loss)이 더 이상 개선되지 않을 때 학습을 자동으로 멈추는 기법입니다.
+
+### 왜 필요한가?
+- 학습을 너무 오래 하면 훈련 데이터에 과적합됩니다
+- 최적의 에폭 수를 사전에 알기 어렵습니다
+- Early Stopping은 자동으로 최적 시점을 찾아줍니다
+
+### 핵심 파라미터
+- **patience**: 몇 에폭 동안 개선이 없을 때 멈출지 결정
+  - 너무 작으면: 조기에 멈춰 최적 성능 미달
+  - 너무 크면: 과적합 후 멈춤
+- **monitor**: 무엇을 기준으로 판단할지 (보통 `val_loss`)
+- **restore_best_weights**: 최적 시점의 가중치 복원 여부
+
+### 동작 원리
+```
+에폭 1: val_loss = 0.35 → 최적 저장
+에폭 2: val_loss = 0.28 → 최적 저장
+에폭 3: val_loss = 0.31 → 개선 없음 (patience 카운트: 1)
+에폭 4: val_loss = 0.33 → 개선 없음 (patience 카운트: 2)
+에폭 5: val_loss = 0.35 → 개선 없음 (patience 카운트: 3) → 학습 중단!
+```
+restore_best_weights=True이면 에폭 2의 가중치로 복원됩니다.""",
+        "code_example": """import tensorflow as tf
+from tensorflow.keras import layers, callbacks
+
+# 모델 정의
+model = tf.keras.Sequential([
+    layers.Dense(256, activation='relu', input_shape=(784,)),
+    layers.Dropout(0.3),
+    layers.Dense(128, activation='relu'),
+    layers.Dropout(0.3),
+    layers.Dense(10, activation='softmax')
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Early Stopping 콜백 설정
+early_stopping = callbacks.EarlyStopping(
+    monitor='val_loss',        # 검증 손실 기준
+    patience=5,                # 5 에폭 동안 개선 없으면 중단
+    restore_best_weights=True, # 최적 가중치 복원
+    verbose=1                  # 중단 시 메시지 출력
+)
+
+# 추가: 학습률 자동 감소 (함께 사용하면 효과적)
+reduce_lr = callbacks.ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.5,      # 학습률을 절반으로
+    patience=3,
+    min_lr=1e-6
+)
+
+# 학습 (최대 100 에폭이지만 Early Stopping으로 자동 중단)
+history = model.fit(
+    x_train, y_train,
+    epochs=100,
+    validation_split=0.2,
+    callbacks=[early_stopping, reduce_lr],
+    batch_size=128
+)
+
+print(f"실제 학습된 에폭 수: {len(history.history['loss'])}")""",
+        "result_description": "patience=5로 설정 시, 검증 손실이 5 에폭 연속 개선되지 않으면 학습이 자동 중단되고 최적 시점의 가중치가 복원됩니다."
+    },
+    {
+        "id": "hyperparameter_tuning",
+        "title": "🔧 7. Hyperparameter Tuning (하이퍼파라미터 튜닝)",
+        "description": "모델 성능을 극대화하는 최적의 설정값 찾기",
+        "content": """## Hyperparameter Tuning이란?
+
+모델이 학습하는 파라미터(가중치)와 달리, 사람이 직접 설정해야 하는 값들을 **하이퍼파라미터**라고 합니다. 이를 최적화하는 과정이 튜닝입니다.
+
+### 주요 하이퍼파라미터
+| 파라미터 | 설명 | 일반적인 범위 |
+|---------|------|-------------|
+| Learning Rate | 가중치 업데이트 속도 | 1e-5 ~ 1e-1 |
+| Batch Size | 한 번에 처리하는 샘플 수 | 16, 32, 64, 128 |
+| 층 수 / 뉴런 수 | 모델 복잡도 | 문제에 따라 다름 |
+| Dropout Rate | 비활성화 비율 | 0.1 ~ 0.5 |
+| Optimizer | 최적화 알고리즘 | Adam, SGD, RMSprop |
+
+### 튜닝 방법론
+
+#### 1. Grid Search (격자 탐색)
+모든 조합을 시도 → 확실하지만 느림
+
+#### 2. Random Search (무작위 탐색)
+무작위로 조합 선택 → Grid Search보다 효율적
+
+#### 3. Keras Tuner (자동 튜닝)
+알고리즘이 자동으로 최적값 탐색 → 가장 효율적
+
+### Learning Rate의 중요성
+- **너무 크면**: 발산하거나 최적값을 건너뜀
+- **너무 작으면**: 학습이 너무 느리거나 지역 최소값에 빠짐
+- **적절한 값**: 손실이 안정적으로 감소""",
+        "code_example": """import keras_tuner as kt
+import tensorflow as tf
+
+# 하이퍼파라미터 탐색 공간 정의
+def build_model(hp):
+    model = tf.keras.Sequential()
+
+    # 층 수와 뉴런 수 탐색
+    for i in range(hp.Int('num_layers', 1, 4)):
+        model.add(tf.keras.layers.Dense(
+            units=hp.Choice(f'units_{i}', [64, 128, 256, 512]),
+            activation='relu'
+        ))
+        model.add(tf.keras.layers.Dropout(
+            rate=hp.Float(f'dropout_{i}', 0.1, 0.5, step=0.1)
+        ))
+
+    model.add(tf.keras.layers.Dense(10, activation='softmax'))
+
+    # 학습률 탐색
+    learning_rate = hp.Choice('learning_rate', [1e-4, 5e-4, 1e-3, 5e-3])
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    return model
+
+# Bayesian Optimization으로 튜닝
+tuner = kt.BayesianOptimization(
+    build_model,
+    objective='val_accuracy',
+    max_trials=20,       # 20가지 조합 시도
+    directory='tuning',
+    project_name='mnist'
+)
+
+# 탐색 실행
+tuner.search(x_train, y_train,
+             epochs=10,
+             validation_split=0.2,
+             callbacks=[tf.keras.callbacks.EarlyStopping(patience=3)])
+
+# 최적 하이퍼파라미터 출력
+best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+print(f"최적 학습률: {best_hps.get('learning_rate')}")
+print(f"최적 층 수: {best_hps.get('num_layers')}")""",
+        "result_description": "Bayesian Optimization은 이전 시도 결과를 바탕으로 다음 탐색 방향을 결정하여 Random Search보다 효율적으로 최적값을 찾습니다."
+    },
+    {
+        "id": "model_evaluation",
+        "title": "📊 8. Model Evaluation (모델 평가 지표)",
+        "description": "정확도 너머의 다양한 성능 측정 방법",
+        "content": """## 모델 평가 지표
+
+정확도(Accuracy)만으로는 모델을 제대로 평가할 수 없습니다. 특히 클래스 불균형 문제에서는 더욱 다양한 지표가 필요합니다.
+
+### 혼동 행렬 (Confusion Matrix)
+```
+              예측: 양성   예측: 음성
+실제: 양성   TP (진양성)  FN (거짓음성)
+실제: 음성   FP (거짓양성) TN (진음성)
+```
+
+### 핵심 지표
+
+#### Accuracy (정확도)
+- 전체 중 맞게 분류한 비율
+- `(TP + TN) / (TP + TN + FP + FN)`
+- 클래스 불균형 시 오해의 소지 있음
+
+#### Precision (정밀도)
+- 양성이라 예측한 것 중 실제 양성 비율
+- `TP / (TP + FP)`
+- 스팸 필터: 정상 메일을 스팸으로 분류하면 안 됨
+
+#### Recall (재현율)
+- 실제 양성 중 양성으로 예측한 비율
+- `TP / (TP + FN)`
+- 암 진단: 실제 환자를 놓치면 안 됨
+
+#### F1 Score
+- Precision과 Recall의 조화평균
+- `2 × (Precision × Recall) / (Precision + Recall)`
+- 불균형 데이터에서 가장 신뢰할 수 있는 지표
+
+### 언제 어떤 지표를?
+- **암 진단, 사기 탐지**: Recall 중시 (놓치면 위험)
+- **스팸 필터, 추천 시스템**: Precision 중시 (오탐이 더 나쁨)
+- **일반적인 분류**: F1 Score 또는 Accuracy""",
+        "code_example": """import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import (classification_report, confusion_matrix,
+                              roc_auc_score, roc_curve)
+import seaborn as sns
+import tensorflow as tf
+
+# 모델 예측
+y_pred_proba = model.predict(x_test)
+y_pred = np.argmax(y_pred_proba, axis=1)
+
+# 1. 상세 분류 보고서
+print(classification_report(y_test, y_pred,
+      target_names=[str(i) for i in range(10)]))
+
+# 2. 혼동 행렬 시각화
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=range(10), yticklabels=range(10))
+plt.title('Confusion Matrix')
+plt.ylabel('실제 레이블')
+plt.xlabel('예측 레이블')
+plt.show()
+
+# 3. 각 클래스별 정밀도/재현율
+for i in range(10):
+    tp = cm[i, i]
+    fp = cm[:, i].sum() - tp
+    fn = cm[i, :].sum() - tp
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    print(f"숫자 {i}: Precision={precision:.3f}, Recall={recall:.3f}, F1={f1:.3f}")""",
+        "result_description": "MNIST 데이터셋은 균형 잡힌 클래스 분포를 가지므로 Accuracy가 신뢰할 만하지만, 실제 문제에서는 Precision/Recall/F1을 함께 확인해야 합니다."
     }
 ]
 
